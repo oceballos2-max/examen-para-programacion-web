@@ -1,0 +1,162 @@
+﻿@rendermode InteractiveServer
+
+<div class="container my-4" style="max-width: 900px;">
+    <h3>Registro de productos</h3>
+    
+    <!-- Formulario de Registro -->
+    <div class="mb-3">
+        <label class="form-label fw-bold">No. de inventario</label>
+        <input type="number" class="form-control" @value="nuevoInventario" @oninput="ActualizarInventario" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label fw-bold">Descripción</label>
+        <input type="text" class="form-control" placeholder="Escribe la descripción del producto" @value="nuevaDescripcion" @oninput="ActualizarDescripcion" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label fw-bold d-block">Departamento</label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="deptos" checked="@(nuevoDepto == "Frutas")" @onclick='() => nuevoDepto = "Frutas"' />
+            <label class="form-check-label">Frutas</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="deptos" checked="@(nuevoDepto == "Verduras")" @onclick='() => nuevoDepto = "Verduras"' />
+            <label class="form-check-label">Verduras</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="deptos" checked="@(nuevoDepto == "Lácteos")" @onclick='() => nuevoDepto = "Lácteos"' />
+            <label class="form-check-label">Lácteos</label>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <div class="alert alert-danger py-2">@mensajeError</div>
+    }
+
+    <!-- Botones de Acción -->
+    <div class="mb-4">
+        <button class="btn btn-success me-2 mb-2" @onclick="GuardarDatos">Guardar datos</button>
+        <button class="btn btn-success me-2 mb-2" @onclick="MostrarListaCompleta">Lista completa</button>
+        <button class="btn btn-success me-2 mb-2" @onclick='() => MostrarListaDepto("Frutas")'>Lista de frutas</button>
+        <button class="btn btn-success me-2 mb-2" @onclick='() => MostrarListaDepto("Verduras")'>Lista de verduras</button>
+        <button class="btn btn-success mb-2" @onclick='() => MostrarListaDepto("Lácteos")'>Lista de lácteos</button>
+    </div>
+
+    <!-- Tabla de Listado -->
+    @if (mostrarTabla)
+    {
+        <div class="card border-success">
+            <div class="card-body">
+                <table class="table table-striped text-center">
+                    <thead>
+                        <tr>
+                            <th>No. Inventario</th>
+                            <th>Descripción</th>
+                            <th>Departamento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var prod in listaFiltrada)
+                        {
+                            <tr>
+                                <td>@prod.Inventario</td>
+                                <td>@prod.Descripcion</td>
+                                <td>@prod.Departamento</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <button class="btn btn-success mt-2" @onclick="CerrarLista">Cerrar lista</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private class Producto
+    {
+        public int Inventario { get; set; }
+        public string Descripcion { get; set; } = "";
+        public string Departamento { get; set; } = "Frutas";
+    }
+
+    private List<Producto> listaProductos = new List<Producto>();
+    private List<Producto> listaFiltrada = new List<Producto>();
+    
+    private int nuevoInventario = 0;
+    private string nuevaDescripcion = "";
+    private string nuevoDepto = "Frutas";
+    private string mensajeError = "";
+    private bool mostrarTabla = false;
+
+    private void ActualizarInventario(ChangeEventArgs e)
+    {
+        int.TryParse(e.Value?.ToString(), out nuevoInventario);
+    }
+
+    private void ActualizarDescripcion(ChangeEventArgs e)
+    {
+        nuevaDescripcion = e.Value?.ToString() ?? "";
+    }
+
+    private void GuardarDatos()
+    {
+        mensajeError = "";
+
+        // Validar si el número de inventario ya existe
+        bool existe = false;
+        foreach (var p in listaProductos)
+        {
+            if (p.Inventario == nuevoInventario)
+            {
+                existe = true;
+                break;
+            }
+        }
+
+        if (existe)
+        {
+            mensajeError = "El número de inventario ya existe. Debe ser único.";
+            return;
+        }
+
+        // Guardar en memoria
+        listaProductos.Add(new Producto
+        {
+            Inventario = nuevoInventario,
+            Descripcion = nuevaDescripcion,
+            Departamento = nuevoDepto
+        });
+
+        // Limpiar campos
+        nuevoInventario = 0;
+        nuevaDescripcion = "";
+        nuevoDepto = "Frutas";
+    }
+
+    private void MostrarListaCompleta()
+    {
+        listaFiltrada = new List<Producto>(listaProductos);
+        mostrarTabla = true;
+    }
+
+    private void MostrarListaDepto(string depto)
+    {
+        listaFiltrada = new List<Producto>();
+        foreach (var p in listaProductos)
+        {
+            if (p.Departamento == depto)
+            {
+                listaFiltrada.Add(p);
+            }
+        }
+        mostrarTabla = true;
+    }
+
+    private void CerrarLista()
+    {
+        mostrarTabla = false;
+    }
+}
